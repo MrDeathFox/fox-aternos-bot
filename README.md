@@ -1,155 +1,131 @@
-# Aternos Discord Bot
+# Aternos Discord Server Control Bot
 
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen?logo=node.js)
-![Puppeteer](https://img.shields.io/badge/Puppeteer-Automation-blue?logo=puppeteer)
-![Discord.js](https://img.shields.io/badge/Discord.js-v14-purple?logo=discord)
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen)
+![Discord.js](https://img.shields.io/badge/discord.js-v14-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
 
-A Discord bot built with Node.js and Puppeteer that automatically starts an [Aternos.org](https://aternos.org) Minecraft server and posts its status (IP, version, player count) to your Discord server.
-
----
-
-## 📌 Features
-
-* ✅ Logs in to Aternos (using saved session cookies)
-* ▶️ Starts your Minecraft server and handles:
-
-  * Google vignette ads
-  * Aternos dialogs/popups (e.g., notification requests)
-  * Start-advertisement confirmation
-* 🧠 Auto-reports server IP, player count, version, and status
-* ⭯️ Edits a single message in Discord to avoid clutter
+A Discord bot that automates starting your Aternos Minecraft server, posts server status updates via webhook embeds, and handles common Aternos web dialogs automatically.
 
 ---
 
-## 🧰 Prerequisites
+## Features
 
-Before setting up, make sure you have the following:
-
-* **Node.js v18 or later**: [Download here](https://nodejs.org/)
-* **Google Chrome** installed (required for Puppeteer)
-* A **Discord Bot Token** (from [Discord Developer Portal](https://discord.com/developers/applications))
-* An **Aternos account** with a Minecraft server created
+- ✅ Starts your Aternos server via Puppeteer automation  
+- 🔒 Handles login and Google vignette popup automatically  
+- 📺 Detects and interacts with advertisement dialogs  
+- 🖼️ Posts a rich embed with server IP, status, player count, and version in a specified webhook channel  
+- 🔁 Updates the server status embed live until the server goes offline  
+- ✉️ Sends a “starting server” message as a reply in the command channel (not via webhook)
 
 ---
 
-## ⚙️ Setup Guide
+## Setup Instructions
 
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/aternos-discord-bot.git
+git clone https://github.com/yourusername/aternos-discord-bot.git
 cd aternos-discord-bot
 ```
 
-### 2. Install Dependencies
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Create the `.env` File
+### 3. Configure `.env`
 
-Create a `.env` file in the root folder with the following content:
+Copy `.env.example` and fill in your credentials:
 
-```env
-DISCORD_TOKEN=your-discord-bot-token
-ATERNOS_USER=your-aternos-username
-ATERNOS_PASS=your-aternos-password
+```bash
+cp .env.example .env
 ```
 
-> 🔐 Never share this file publicly! It contains sensitive credentials.
+#### Required variables:
+
+| Variable        | Description                             |
+|----------------|-----------------------------------------|
+| `DISCORD_TOKEN` | Discord bot token                       |
+| `ATERNOS_USER`  | Aternos account username/email          |
+| `ATERNOS_PASS`  | Aternos account password                |
+| `WEBHOOK_ID`    | Webhook ID for server status channel    |
+| `WEBHOOK_TOKEN` | Webhook token for server status channel |
+
+> 📌 You can find `WEBHOOK_ID` and `WEBHOOK_TOKEN` by creating a webhook in your Discord channel and copying the URL:  
+> Format: `https://discord.com/api/webhooks/{WEBHOOK_ID}/{WEBHOOK_TOKEN}`
+
+### 4. Run manual login once
+
+You must run this script **once** to store login cookies:
+
+```bash
+node manual-login.js
+```
+
+This opens a Chrome window. Log into Aternos manually. The session will be saved.
+
+### 5. Start the bot
+
+```bash
+node bot.js
+```
 
 ---
 
-## 🔑 One-Time Manual Login (Important!)
+## Usage
 
-### You **must** run `manual-login.js` **once** before using the bot.
-
-This will log in to Aternos and store session cookies, so the bot can skip captchas and 2FA in future runs.
-
-```bash
-`node manual-login.js` or `start-manual.bat`
-```
-
-1. A Chrome window will open.
-2. Log in manually with your Aternos account.
-3. Wait until you’re redirected to your server dashboard.
-4. Close the window.
-
-The session will now be saved and reused every time the bot runs.
-
----
-
-## 🚀 Running the Bot
-
-After running `manual-login.js`, start the bot:
-
-```bash
-`node bot.js` or `bot-start.bat`
-```
-
-In your Discord server, type:
+Type the following command in any Discord channel the bot can see:
 
 ```
 !start
 ```
 
-The bot will:
-
-* Load your Aternos server page
-* Handle ads/popups
-* Start the server
-* Edit its message to show current status, IP, version, and player count
+- The bot replies in that channel with a “Starting server” message.  
+- A rich embed is posted in your status webhook channel.  
+- The embed is updated every few seconds until the server shuts down.
 
 ---
 
-## 🛠 Chrome Path Configuration
+## Requirements
 
-In `bot.js`, make sure Puppeteer is pointing to your local Chrome install:
+- Node.js 18+  
+- Google Chrome (or Chromium) installed at:  
+  `C:\Program Files\Google\Chrome\Application\chrome.exe`  
+- Modify the `executablePath` in `bot.js` if using a different OS/path
 
-```js
-executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+---
+
+## Notes
+
+- Puppeteer runs in non-headless mode to avoid detection by Aternos  
+- Handles:
+  - Notification dialogs
+  - Advertisement start dialogs
+  - Google vignette popups  
+- Automatically edits the embed message with updated info
+
+---
+
+## Example `.env`
+
+```env
+DISCORD_TOKEN=your-bot-token
+ATERNOS_USER=your-email-or-username
+ATERNOS_PASS=your-password
+WEBHOOK_ID=your-webhook-id
+WEBHOOK_TOKEN=your-webhook-token
 ```
 
-> Update this if you're using macOS or Linux.
+---
+
+## License
+
+MIT License
 
 ---
 
-## 💡 Troubleshooting
+## Support
 
-| Issue                              | Fix                                                       |
-| ---------------------------------- | --------------------------------------------------------- |
-| `TimeoutError: Navigation timeout` | Increase timeout or retry (internet may be slow)          |
-| "CSS not loading"                  | Aternos may throttle Puppeteer. Try again later           |
-| Server says "Offline" after start  | Wait a few seconds. Bot polls after clicking start        |
-| Bot doesn't respond                | Make sure the bot is online, invited, and has permissions |
-| Chrome not launching               | Check `executablePath` or install Chrome manually         |
-
----
-
-## 🧹 Tech Stack
-
-* [Puppeteer](https://github.com/puppeteer/puppeteer)
-* [Discord.js v14](https://discord.js.org)
-* Node.js + dotenv for environment config
-
----
-
-## 📜 License
-
-MIT License — feel free to use and modify. Please credit the original author.
-
----
-
-## 🤝 Maintainer
-
-Made with ❤️ by [@MrDeathFox](https://github.com/MrDeathFox)
-
-Pull requests welcome. If you'd like to add server queue support or auto-refresh ads, feel free to contribute!
-
-## Discord Server
-Be sure to join my Discord community [Join Here](https://discord.gg/mKMm5a5CCK)
-
-## Reddit Community
-Join our community at [r/MinecraftServerPromo](https://www.reddit.com/r/MinecraftServerPromo/) to share and discover Minecraft servers!
+Feel free to open an issue or pull request if you'd like to help improve the project.
