@@ -150,3 +150,6 @@ Pull requests welcome. If you'd like to add server queue support or auto-refresh
 
 ## Discord Server
 Be sure to join my Discord community [Join Here](https://discord.gg/mKMm5a5CCK)
+
+## Reddit Community
+Join our community at [r/MinecraftServerPromo](https://www.reddit.com/r/MinecraftServerPromo/) to share and discover Minecraft servers!
