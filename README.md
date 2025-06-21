@@ -144,6 +144,9 @@ MIT License — feel free to use and modify. Please credit the original author.
 
 ## 🤝 Maintainer
 
-Made with ❤️ by [@YourName](https://github.com/your-username)
+Made with ❤️ by [@MrDeathFox](https://github.com/MrDeathFox)
 
 Pull requests welcome. If you'd like to add server queue support or auto-refresh ads, feel free to contribute!
+
+## Discord Server
+Be sure to join my Discord community [Join Here](https://discord.gg/mKMm5a5CCK)
