@@ -13,7 +13,7 @@ A headless Discord bot that automates starting and monitoring an Aternos Minecra
 - Start your Aternos server with `!start` in Discord
 - Automatically clicks through login, ads, and dialogs
 - Posts server status (IP, player count, version, etc.) via a webhook embed
-- Updates the message when the server goes offline(sorta will create a new message on next server start will fix in later update)
+- Updates the message when the server goes offline
 
 ## Requirements
 
@@ -82,6 +82,8 @@ Now in Discord, use:
 - The bot uses a persistent Puppeteer profile (`./puppeteer-profile`) to save sessions.
 - Make sure your Aternos account only has **one server** or adapt the selector logic.
 - The webhook must already exist in your Discord channel and match the `WEBHOOK_ID` and `WEBHOOK_TOKEN`.
+- The script will also `taskkill` Google Chrome after the server starts.
+- The bot will create a new message on next server start will fix in later update.
 
 ## License
 
