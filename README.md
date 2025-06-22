@@ -53,7 +53,6 @@ ATERNOS_USER=your-aternos-username
 ATERNOS_PASS=your-aternos-password
 WEBHOOK_ID=your-webhook-id
 WEBHOOK_TOKEN=your-webhook-token
-CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
 ```
 
 4. **Login manually once**
