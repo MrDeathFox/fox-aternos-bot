@@ -87,6 +87,12 @@ Now in Discord, use:
 
 MIT
 
+## 🤝 MaintainerAdd commentMore actions
+
+Made with ❤️ by [@MrDeathFox](https://github.com/MrDeathFox)
+
+Pull requests welcome. If you'd like to add server queue support or auto-refresh ads, feel free to contribute!
+
 ## Discord Community
 [Obsidian Link](https://discord.gg/mKMm5a5CCK)
 
