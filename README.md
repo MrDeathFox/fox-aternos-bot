@@ -21,7 +21,7 @@ A headless Discord bot that automates starting and monitoring an Aternos Minecra
 - A Discord bot token
 - A Webhook URL for your server status channel
 - Google Chrome installed (or Chromium path configured)
-- A VPS or spare computer
+- A VPS(Requires a different way to setup) or spare computer(Easiest)
 ## Setup
 
 1. **Clone the repository**
