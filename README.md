@@ -1,5 +1,5 @@
 
-# Aternos Discord Bot
+# Fox Aternos Bot
 
 [![Discord](https://img.shields.io/badge/Discord-Bot-5865F2?logo=discord&logoColor=white)](https://discord.com)
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-green?logo=node.js)](https://nodejs.org/)
