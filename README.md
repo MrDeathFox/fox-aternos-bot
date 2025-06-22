@@ -85,7 +85,7 @@ Now in Discord, use:
 
 ## License
 
-MIT
+MIT License — feel free to use and modify. Please credit the original author.
 
 ## 🤝 MaintainerAdd commentMore actions
 
