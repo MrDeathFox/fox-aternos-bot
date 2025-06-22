@@ -27,7 +27,7 @@ A headless Discord bot that automates starting and monitoring an Aternos Minecra
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/your-username/aternos-discord-bot.git
+git clone https://github.com/MrDeathFox/fox-aternos-bot.git
 cd fox-aternos-bot
 ```
 
