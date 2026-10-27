@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.local
+camoufox-profile/
+data/
+puppeteer-profile/
+*.log
+.DS_Store
+coverage/
+dist/
+.cache/

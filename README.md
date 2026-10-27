@@ -1,99 +1,85 @@
+# camofox-aternos
 
-# Aternos Discord Bot
+Stealth-oriented fork of [MrDeathFox/fox-aternos-bot](https://github.com/MrDeathFox/fox-aternos-bot): a Discord `!start` bot that drives the Aternos panel with **Camoufox** (Firefox fingerprint via Playwright) instead of stock Puppeteer + Chrome.
 
-[![Discord](https://img.shields.io/badge/Discord-Bot-5865F2?logo=discord&logoColor=white)](https://discord.com)
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green?logo=node.js)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Puppeteer](https://img.shields.io/badge/Powered%20by-Puppeteer-40c4ff?logo=puppeteer&logoColor=black)](https://pptr.dev/)
+**Credit:** original project by **MrDeathFox** (`fox-aternos-bot`). This tree renames the product to **camofox-aternos** and changes the browser stack / policy.
 
-A headless Discord bot that automates starting and monitoring an Aternos Minecraft server using Puppeteer and a Discord webhook.
+---
 
-## Features
+## Honest warning (read this)
 
-- Start your Aternos server with `!start` in Discord
-- Automatically clicks through login, ads, and dialogs
-- Posts server status (IP, player count, version, etc.) via a webhook embed
-- Updates the message when the server goes offline
+Aternos [Terms of Service](https://aternos.gmbh/en/aternos/terms) **§5.2(e)** prohibits *automatically accessing the website or automating actions on the website*. Discord bots that click Start on the panel violate that rule. Staff have confirmed the same on the community board and Reddit: panel automation (including Discord start bots) is banned; in-game Discord bridges like DiscordSRV are fine.
+
+**Stealth is not a ToS waiver and is not ban-proof.** Camoufox + humanized cursor may reduce naive bot fingerprints; Aternos can still detect, suspend, or delete accounts. Use at your own risk.
+
+### Legal / supported alternative
+
+If you need Discord start/stop without panel scraping, use **[exaroton](https://exaroton.com/)** (same company, paid on-demand) with the [official Discord bot](https://support.exaroton.com/hc/en-us/articles/360019687777-Using-the-exaroton-Discord-bot) and/or the [public API](https://developers.exaroton.com/).
+
+---
+
+## What changed vs upstream
+
+| Area | fox-aternos-bot | camofox-aternos |
+|------|-----------------|-----------------|
+| Browser | Puppeteer + Chrome profile | Camoufox + `playwright-core`, `humanize: true` |
+| Ads | Vignette DOM removal; request abort for images/CSS/fonts | **No ad skip** — watch rewarded flow or fail closed |
+| Cleanup | README documented `taskkill` Chrome | **Never** kills unrelated browser processes |
+| Discord | Open `!start` | Rate limit + optional adult role gate |
+| Session | Chrome userDataDir | Persistent profile + Playwright `storage-state.json` |
+
+---
 
 ## Requirements
 
-- Node.js 18 or higher
-- A Discord bot token
-- A Webhook URL for your server status channel
-- Google Chrome installed (or Chromium path configured)
-- A VPS(Requires a different way to setup) or spare computer(Easiest)
+- Node.js **≥ 22.15**
+- Camoufox browser build (`npm run fetch-browser`)
+- Discord bot with Message Content intent
+- Aternos account (manual login once recommended)
+
 ## Setup
-
-1. **Clone the repository**
-
-```bash
-git clone https://github.com/MrDeathFox/fox-aternos-bot.git
-cd fox-aternos-bot
-```
-
-2. **Install dependencies**
-
-```bash
-npm install
-```
-
-3. **Configure environment variables**
-
-Copy `.env.example` to `.env` and fill in the values:
 
 ```bash
 cp .env.example .env
+# fill DISCORD_TOKEN; optional ATERNOS_*; ADULT_ROLE_*; WEBHOOK_*
+npm install
+npm run fetch-browser
+npm run manual-login   # headed Camoufox; solve CAPTCHA; saves ./data/storage-state.json
+npm start              # then !start in Discord
 ```
 
-Update your `.env`:
-
-```
-DISCORD_TOKEN=your-bot-token
-ATERNOS_USER=your-aternos-username
-ATERNOS_PASS=your-aternos-password
-WEBHOOK_ID=your-webhook-id
-WEBHOOK_TOKEN=your-webhook-token
-```
-
-4. **Login manually once**
-
-Run:
+### Docker Compose (local only)
 
 ```bash
-node manual-login.js
+cp .env.example .env   # fill secrets
+docker compose up --build
 ```
 
-This will open a browser window. Log into Aternos. Your session will be saved.
+Volumes keep `camoufox-profile` + storage-state under the `camofox-data` volume. This is for local/dev — not estate production deploy.
 
-5. **Start the bot**
+## Configuration
+
+See `.env.example`. Highlights:
+
+- `ADULT_ROLE_ID` and/or `ADULT_ROLE_NAME` — **required**; bot refuses to start without a gate
+- Discord Developer Portal: enable **Message Content** and **Server Members** intents
+- `START_COOLDOWN_MS` — per-user-per-guild cooldown (default 5 minutes)
+- `STORAGE_STATE_DIR` — Playwright storage state (prefer over password every run)
+- `AD_WAIT_MS` — max wait for rewarded ad completion before fail-closed
+- `CAMOUFOX_HEADLESS` — unset/`1` = headless; `0` = headed; `virtual` = Xvfb virtual display
+
+## Tests
 
 ```bash
-node bot.js
+npm test
 ```
 
-Now in Discord, use:
+Unit coverage for rate limiter, adult role gate, human jitter, and ad fail-closed helpers. Camoufox smoke: `CAMOUFOX_HEADLESS=1 node scripts/smoke-launch.js` (does not hit Aternos).
 
-```
-!start
-```
+## Auth expiry
 
-## Notes
-
-- The bot uses a persistent Puppeteer profile (`./puppeteer-profile`) to save sessions.
-- Make sure your Aternos account only has **one server** or adapt the selector logic.
-- The webhook must already exist in your Discord channel and match the `WEBHOOK_ID` and `WEBHOOK_TOKEN`.
-- The script will also `taskkill` Google Chrome after the server starts.
-- The bot will create a new message on next server start will fix in later update.
+After Discord token rotate or Aternos session expiry: update `.env` / re-run `npm run manual-login`. There is no refresh-token loop for Aternos panel cookies — storage-state is the long-lived credential until the site invalidates it.
 
 ## License
 
-MIT License — feel free to use and modify. Please credit the original author.
-
-## 🤝 Maintainer
-
-Made with ❤️ by [@MrDeathFox](https://github.com/MrDeathFox)
-
-Pull requests welcome. If you'd like to add server queue support or auto-refresh ads, feel free to contribute!
-
-## Discord Community
-[Nova Lifesteal](https://discord.gg/APNHYkXpS)
+MIT — see `LICENSE`. Upstream concept and early code: MrDeathFox.

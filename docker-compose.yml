@@ -1,0 +1,16 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      CAMOUFOX_HEADLESS: ${CAMOUFOX_HEADLESS:-1}
+      CAMOUFOX_PROFILE_DIR: /data/camoufox-profile
+      STORAGE_STATE_DIR: /data/storage
+    volumes:
+      - camofox-data:/data
+    # Local/dev only — do not point this at estate production hosts.
+
+volumes:
+  camofox-data:
