@@ -1,187 +1,105 @@
-// Updated bot.js for Aternos Discord bot with vignette handling and improved server status polling
-const { Client, GatewayIntentBits } = require('discord.js');
-const puppeteer = require('puppeteer-core');
-require('dotenv').config();
+import { Client, GatewayIntentBits, Partials } from 'discord.js';
+import dotenv from 'dotenv';
+import { startAternosServer } from './lib/aternos.js';
+import { AdFlowError } from './lib/ads.js';
+import { StartRateLimiter, formatRetry } from './lib/rateLimit.js';
+import { adultGateFromEnv, checkAdultRole } from './lib/roles.js';
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+dotenv.config();
+
+const token = process.env.DISCORD_TOKEN;
+if (!token) {
+  console.error('DISCORD_TOKEN is required');
+  process.exit(1);
 }
 
-async function startAternosServer(message) {
-  let browser;
-  let statusMessage;
-  try {
-    statusMessage = await message.reply('⏳ Connecting to Aternos and starting the server...');
+const cooldownMs = Number(process.env.START_COOLDOWN_MS || 5 * 60 * 1000);
+const rateLimiter = new StartRateLimiter({ cooldownMs });
+const adultGate = adultGateFromEnv();
 
-    browser = await puppeteer.launch({
-      headless: false,
-      executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      userDataDir: './puppeteer-profile',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      defaultViewport: null
-    });
-
-    const page = await browser.newPage();
-    await page.setRequestInterception(true);
-    page.on('request', req => {
-      if (["image", "stylesheet", "font"].includes(req.resourceType())) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
-
-    await page.goto('https://aternos.org/go/', { waitUntil: 'domcontentloaded', timeout: 60000 });
-
-    // Handle login or redirect
-    const alreadyLoggedIn = await page.$('a[href="/servers/"]');
-    if (alreadyLoggedIn) {
-      await alreadyLoggedIn.click();
-    } else {
-      const loginFrame = page.frames().find(f => f.url().includes('aternos'));
-      if (!loginFrame) throw new Error('Login frame not found');
-
-      await loginFrame.waitForSelector('input#user', { timeout: 5000 });
-      await loginFrame.type('input#user', process.env.ATERNOS_USER, { delay: 50 });
-      await loginFrame.type('input#password', process.env.ATERNOS_PASS, { delay: 50 });
-      await loginFrame.click('button[type="submit"]');
-      try {
-        await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 });
-      } catch {
-        console.log('⚠️ Login navigation timeout, continuing.');
-      }
-    }
-
-    await page.goto('https://aternos.org/servers/', { waitUntil: 'domcontentloaded', timeout: 60000 });
-
-    const serverSelector = 'div.server-body';
-    await page.waitForSelector(serverSelector, { timeout: 15000 });
-    await page.click(serverSelector);
-
-    await page.waitForSelector('#start', { timeout: 20000 });
-
-    await handleGoogleVignette(page);
-    await clickStartButton(page);
-    await handleDialogs(page);
-    await handleAdStartPopup(page);
-
-    await delay(15000);
-
-    const info = await getServerInfo(page);
-    await statusMessage.edit(`✅ Server started!
-**Status:** ${info.status}
-**IP:** \`${info.ip}\`
-**Players:** ${info.players}
-**Version:** ${info.version}`);
-  } catch (err) {
-    console.error('Error starting Aternos server:', err);
-    if (statusMessage) await statusMessage.edit('❌ Failed to start Aternos server. Check logs for details.');
-  } finally {
-    if (browser) await browser.close();
-  }
-}
-
-async function handleGoogleVignette(page) {
-  try {
-    const frame = page.frames().find(f => f.url().includes('google_vignette'));
-    if (frame) {
-      await page.evaluate(() => {
-        const el = document.querySelector('#google_vignette');
-        if (el) el.remove();
-      });
-      console.log('🛑 Dismissed #google_vignette');
-    }
-  } catch (e) {
-    console.log('No vignette to dismiss.');
-  }
-}
-
-async function clickStartButton(page) {
-  const startButton = await page.$('#start');
-  if (startButton) {
-    await startButton.click();
-    console.log('✅ Clicked start button.');
-  } else {
-    throw new Error('❌ Start button not found.');
-  }
-}
-
-async function handleDialogs(page) {
-  try {
-    const dialogSelector = 'dialog.alert.alert-danger';
-    const isDialog = await page.$(dialogSelector);
-    if (isDialog) {
-      await page.click('dialog.alert.alert-danger button.btn.btn-danger');
-      console.log('🛑 Dismissed alert-danger dialog');
-    }
-  } catch (e) {
-    console.log('No alert-danger dialog found.');
-  }
-}
-
-async function handleAdStartPopup(page) {
-  try {
-    const adDialog = await page.$('dialog.alert.alert-success');
-    if (adDialog) {
-      const startBtn = await page.$('dialog.alert.alert-success button.btn-success');
-      if (startBtn) {
-        await startBtn.click();
-        console.log('📺 Started advertisement server dialog');
-      }
-    }
-  } catch (e) {
-    console.log('No advertisement dialog found.');
-  }
-}
-
-async function getServerInfo(page) {
-  const maxAttempts = 30; // ~60 seconds (30 * 2s)
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      const statusText = await page.evaluate(() => {
-        if (document.querySelector('div.status.online')) return 'Online';
-        if (document.querySelector('div.status.offline')) return 'Offline';
-        if (document.querySelector('div.status.loading')) return 'Loading';
-        if (document.querySelector('div.status.preparing')) return 'Preparing';
-        if (document.querySelector('div.status.queue')) return 'In Queue';
-        return 'Unknown';
-      });
-
-      const ip = await page.$eval('span#ip', el => el.textContent.trim()).catch(() => 'N/A');
-      const players = await page.$eval('div.live-status-box-value.js-players', el => el.textContent.trim()).catch(() => 'N/A');
-      const version = await page.$eval('span#version', el => el.textContent.trim()).catch(() => 'N/A');
-
-      if (statusText === 'Online' || statusText === 'Offline') {
-        return { status: statusText, ip, players, version };
-      }
-
-      console.log(`🔄 Waiting for server to finish starting... (Attempt ${attempt + 1})`);
-      await delay(2000);
-    } catch (err) {
-      console.log('⚠️ Error while checking server info:', err);
-    }
-  }
-
-  return { status: 'Timeout', ip: 'N/A', players: 'N/A', version: 'N/A' };
+if (!adultGate.roleId && !adultGate.roleName) {
+  console.error(
+    'Set ADULT_ROLE_ID and/or ADULT_ROLE_NAME — adult role gate is mandatory (fail closed).'
+  );
+  process.exit(1);
 }
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent,
   ],
+  partials: [Partials.Channel],
 });
 
 client.once('ready', () => {
-  console.log(`🤖 Logged in as ${client.user.tag}`);
+  console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on('messageCreate', async message => {
+client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-  if (message.content.trim().toLowerCase() === '!start') {
-    await startAternosServer(message);
+  if (message.content.trim().toLowerCase() !== '!start') return;
+
+  const guildId = message.guild?.id;
+  const userId = message.author.id;
+
+  let member = message.member;
+  if (!member && message.guild) {
+    member = await message.guild.members.fetch(userId).catch(() => null);
+  }
+
+  const roleCheck = checkAdultRole(member, adultGate);
+  if (!roleCheck.ok) {
+    await message.reply(`⛔ ${roleCheck.reason}`);
+    return;
+  }
+
+  const gate = rateLimiter.tryAcquire(userId, guildId);
+  if (!gate.allowed) {
+    await message.reply(
+      `⏳ Slow down — try again in ${formatRetry(gate.retryAfterMs)}.`
+    );
+    return;
+  }
+
+  const statusMessage = await message.reply(
+    '⏳ Starting Aternos via Camoufox (humanized; ads not skipped)…'
+  );
+
+  try {
+    const info = await startAternosServer({
+      onProgress: async (msg) => {
+        await statusMessage.edit(`⏳ ${msg}`).catch(() => {});
+      },
+    });
+
+    await statusMessage.edit(
+      `✅ Server start flow finished.\n**Status:** ${info.status}\n**IP:** \`${info.ip}\`\n**Players:** ${info.players}\n**Version:** ${info.version}`
+    );
+
+    // Optional webhook mirror (same shape as upstream).
+    const whId = process.env.WEBHOOK_ID;
+    const whToken = process.env.WEBHOOK_TOKEN;
+    if (whId && whToken) {
+      try {
+        const webhook = await client.fetchWebhook(whId, whToken);
+        await webhook.send({
+          content: `Aternos **${info.status}** — \`${info.ip}\` · players ${info.players} · ${info.version}`,
+        });
+      } catch (err) {
+        console.warn('Webhook update failed:', err?.message || err);
+      }
+    }
+  } catch (err) {
+    console.error('start failed:', err);
+    const friendly =
+      err instanceof AdFlowError
+        ? `❌ Ad flow failed (fail closed): ${err.message}`
+        : '❌ Failed to start Aternos server. Check logs.';
+    await statusMessage.edit(friendly).catch(() => {});
   }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(token);

@@ -1,7 +1,40 @@
 {
+  "name": "camofox-aternos",
+  "version": "1.0.0",
+  "description": "Stealth Camoufox fork of fox-aternos-bot — Discord !start for Aternos with humanized browsing",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "scripts": {
+    "start": "node bot.js",
+    "manual-login": "node scripts/manual-login.js",
+    "test": "node --test tests/*.test.js",
+    "fetch-browser": "npx camoufox fetch",
+    "postinstall": "node scripts/postinstall-hint.js"
+  },
   "dependencies": {
+    "camoufox": "^0.5.8",
     "discord.js": "^14.20.0",
     "dotenv": "^16.5.0",
-    "puppeteer": "^24.10.2"
-  }
+    "playwright-core": "^1.55.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heavygee/camofox-aternos.git"
+  },
+  "keywords": [
+    "aternos",
+    "discord",
+    "camoufox",
+    "playwright",
+    "minecraft"
+  ],
+  "author": "heavygee",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/heavygee/camofox-aternos/issues"
+  },
+  "homepage": "https://github.com/heavygee/camofox-aternos#readme"
 }
